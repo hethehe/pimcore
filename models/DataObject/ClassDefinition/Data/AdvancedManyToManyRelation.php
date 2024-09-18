@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Pimcore\Model\DataObject\ClassDefinition\Data;
 
 use Exception;
+use Pimcore;
 use Pimcore\Db;
 use Pimcore\Logger;
 use Pimcore\Model\Asset;
@@ -26,7 +27,6 @@ use Pimcore\Model\DataObject\Fieldcollection\Data\AbstractData;
 use Pimcore\Model\DataObject\Localizedfield;
 use Pimcore\Model\Document;
 use Pimcore\Model\Element;
-use Pimcore\Model\Element\ElementInterface;
 
 class AdvancedManyToManyRelation extends ManyToManyRelation implements IdRewriterInterface, PreGetDataInterface, ClassSavedInterface
 {
@@ -142,7 +142,7 @@ class AdvancedManyToManyRelation extends ManyToManyRelation implements IdRewrite
 
                     if ($source instanceof DataObject\Concrete) {
                         /** @var DataObject\Data\ElementMetadata $metaData */
-                        $metaData = \Pimcore::getContainer()->get('pimcore.model.factory')
+                        $metaData = Pimcore::getContainer()->get('pimcore.model.factory')
                             ->build(
                                 'Pimcore\Model\DataObject\Data\ElementMetadata',
                                 [
@@ -187,7 +187,7 @@ class AdvancedManyToManyRelation extends ManyToManyRelation implements IdRewrite
     /**
      *
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function getDataForQueryResource(mixed $data, DataObject\Concrete $object = null, array $params = []): ?string
     {
@@ -210,7 +210,7 @@ class AdvancedManyToManyRelation extends ManyToManyRelation implements IdRewrite
             return ',' . implode(',', $d) . ',';
         }
 
-        throw new \Exception('invalid data passed to getDataForQueryResource - must be array');
+        throw new Exception('invalid data passed to getDataForQueryResource - must be array');
     }
 
     /**
@@ -357,7 +357,7 @@ class AdvancedManyToManyRelation extends ManyToManyRelation implements IdRewrite
 
                 if ($e instanceof Element\ElementInterface) {
                     /** @var DataObject\Data\ElementMetadata $metaData */
-                    $metaData = \Pimcore::getContainer()->get('pimcore.model.factory')
+                    $metaData = Pimcore::getContainer()->get('pimcore.model.factory')
                         ->build(
                             'Pimcore\Model\DataObject\Data\ElementMetadata',
                             [
@@ -410,6 +410,10 @@ class AdvancedManyToManyRelation extends ManyToManyRelation implements IdRewrite
         $items = [];
         if (is_array($data) && count($data) > 0) {
             foreach ($data as $metaObject) {
+                if (!($metaObject instanceof DataObject\Data\ElementMetadata)) {
+                    continue;
+                }
+
                 $o = $metaObject->getElement();
                 if (!$o) {
                     continue;
@@ -666,6 +670,9 @@ class AdvancedManyToManyRelation extends ManyToManyRelation implements IdRewrite
         }
     }
 
+    /**
+     * @return $this
+     */
     public function setColumns(array $columns): static
     {
         if (isset($columns['key'])) {
@@ -701,7 +708,7 @@ class AdvancedManyToManyRelation extends ManyToManyRelation implements IdRewrite
     public function classSaved(DataObject\ClassDefinition $class, array $params = []): void
     {
         /** @var DataObject\Data\ElementMetadata $temp */
-        $temp = \Pimcore::getContainer()->get('pimcore.model.factory')
+        $temp = Pimcore::getContainer()->get('pimcore.model.factory')
             ->build(
                 'Pimcore\Model\DataObject\Data\ElementMetadata',
                 [
@@ -894,19 +901,6 @@ class AdvancedManyToManyRelation extends ManyToManyRelation implements IdRewrite
         return null;
     }
 
-    /**
-     *
-     *
-     * @internal
-     */
-    protected function buildUniqueKeyForAppending(ElementInterface $item): string
-    {
-        $elementType = Element\Service::getElementType($item);
-        $id = $item->getId();
-
-        return $elementType . $id;
-    }
-
     public function isOptimizedAdminLoading(): bool
     {
         return $this->optimizedAdminLoading;
@@ -922,6 +916,9 @@ class AdvancedManyToManyRelation extends ManyToManyRelation implements IdRewrite
         return $this->allowMultipleAssignments;
     }
 
+    /**
+     * @return $this
+     */
     public function setAllowMultipleAssignments(bool|int|null $allowMultipleAssignments): static
     {
         $this->allowMultipleAssignments = (bool) $allowMultipleAssignments;
